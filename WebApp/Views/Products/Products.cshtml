@@ -1,0 +1,43 @@
+﻿@using Domain.Products;
+@model IEnumerable<Product>
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Products</title>
+        <meta charset="utf-8"/>
+        <title>Продукты</title>
+    </head>
+    <body>
+        <h2>Продукты:</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID </th>
+                    <th>Имя продукта </th>
+                    <th>Категория </th>
+                    <th>Группа </th>
+                    <th>Описание </th>
+                    <th>В продаже </th>
+                    <th>Цена </th>
+                    <th>Удалён </th>
+                </tr>
+            </thead>
+            <tbody>
+            @foreach (var product in Model)
+            {
+                <tr>
+                    <td>@product.Id</td>
+                    <td>@product.Name</td>
+                    <td>@product.Category</td>
+                    <td>@product.GroupId</td>
+                    <td>@product.Description</td>
+                    <td>@product.IsSale</td>
+                    <td>@product.Price</td>
+                    <td>@product.IsRemoved</td>
+                </tr>
+            }
+        </tbody>
+        </table>
+    </body>
+</html>
