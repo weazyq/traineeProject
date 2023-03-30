@@ -1,13 +1,12 @@
 import { Add } from '@mui/icons-material'
 import { Alert, Autocomplete, Button, Dialog, TextField } from '@mui/material'
-import { Dispatch, SetStateAction, useEffect, useMemo, useState } from 'react'
-import { Group, mapToGroups } from '../../domain/groups/models/group'
-import { mapToProduct, Product } from '../../domain/products/models/product'
+import { useEffect, useMemo, useState } from 'react'
+import { Group } from '../../domain/groups/models/group'
+import { Product } from '../../domain/products/models/product'
 import { ProductBlank } from '../../domain/products/models/productBlank'
 import { ProductCategory } from '../../domain/products/models/productCategory'
 import { ProductGroupsProvider } from '../../domain/products/productGroupsProvider'
 import ProductsProvider from '../../domain/products/productsProvider'
-import { HttpClient } from './productList'
 
 interface Props{
     productId: string | null
@@ -22,14 +21,11 @@ const ProductEditorModal = (props: Props) => {
     const [groups, setGroups] = useState<Group[]>([])
     const selectedProductGroup = useMemo(() => groups.find(g => g.id === productBlank.groupId) ?? null, [productBlank.groupId])
 
-    //const [selectedProductGroup, setSelectedProductGroup] = useState<Group | null>(null)
-
     useEffect(() => {
         async function load(){
 
             if(props.productId){
-                const result: Product = await ProductsProvider.getProduct(props.productId)
-                const product: Product = mapToProduct(result)
+                const product: Product = await ProductsProvider.getProduct(props.productId)
 
                 const productBlank: ProductBlank = ProductBlank.fromProduct(product)
 
@@ -48,7 +44,7 @@ const ProductEditorModal = (props: Props) => {
     useEffect(() => {
 
         async function load() {
-          const productGroups = await ProductGroupsProvider.getGroups(null) 
+          const productGroups = await ProductGroupsProvider.getGroups() 
           setGroups(productGroups)
         }
     
@@ -56,23 +52,18 @@ const ProductEditorModal = (props: Props) => {
     
       }, [])
 
-
       async function saveProduct() {  
-        const error = await ProductsProvider.saveProduct(productBlank)
+        const result = await ProductsProvider.saveProduct(productBlank)
     
-        if(!error){
-
+        if(result.isSuccess){
             setProductBlank(ProductBlank.getDefault)
             setError('')
             return props.onClose(true)
         }
 
-        setError(error)  
+        setError(result.errors[0])  
       }
     
-    //setProductBlank({...productBlank, name: ''})
-    //setProductBlank((productBlank) => ({...productBlank, name: ""}))
-
     return (
         <Dialog open={props.isOpen} onClose={() => props.onClose(false)}>
             <div style={{ display: "flex", flexDirection: 'column', gap: 20, padding: 20, textAlign: 'center' }}>
@@ -94,10 +85,7 @@ const ProductEditorModal = (props: Props) => {
                     options={groups}
                     getOptionLabel={(group) => group.name}
                     value={selectedProductGroup}
-                    onChange={(_, group) => {
-                        setProductBlank((productBlank) => ({...productBlank, groupId: group?.id ?? null}))
-                      //  setSelectedProductGroup(group)
-                    }}
+                    onChange={(_, group) => { setProductBlank((productBlank) => ({ ...productBlank, groupId: group?.id ?? null })) }}
                     renderInput={(params) => <TextField {...params} label="Группа"/>}
                 />
                 <TextField size='small' label='Описание' value={productBlank.description} onChange={e => setProductBlank((productBlank) => ({ ...productBlank, description: e.target.value }))} />

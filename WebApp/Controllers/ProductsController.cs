@@ -22,7 +22,7 @@ namespace WebApp.Controllers
         public IActionResult Index()
         {
             Product[] products = _productsService.GetProducts();
-            return View("Products",products);
+            return View("Products", products);
         }
 
         [HttpGet("/products/get")]
@@ -34,7 +34,7 @@ namespace WebApp.Controllers
         }
 
         [HttpGet("/product/get")]
-        public Product GetProduct([FromQuery]Guid id)
+        public Product GetProduct([FromQuery] Guid id)
         {
             Product product = _productsService.GetProduct(id);
 
@@ -42,36 +42,57 @@ namespace WebApp.Controllers
         }
 
         [HttpPost("/products/save")]
-        public Result SaveProduct([FromBody]ProductBlank productBlank)
+        public Result SaveProduct([FromBody] ProductBlank productBlank)
         {
             return _productsService.Save(productBlank);
         }
 
         [HttpPost("/products/remove")]
-        public Result RemoveProduct([FromQuery]Guid id)
+        public Result RemoveProduct([FromQuery] Guid id)
         {
             return _productsService.Remove(id);
         }
 
-        [HttpGet("/products/groups/get")]
-        public Group[] GetGroups([FromQuery]String? queryString)
+        [HttpGet("/products/groups/get-by-query")]
+        public Group[] GetGroups([FromQuery] String? queryString)
         {
             Group[] groups = _groupsService.GetGroups(queryString);
 
             return groups;
         }
 
+        [HttpGet("/products/groups/get")]
+        public Page<Group> GetGroups(Int32 pageNumber, Int32 countInPage, String? queryString)
+        {
+            Page<Group> page = _groupsService.GetGroups(pageNumber, countInPage, queryString);
+
+            return page;
+        }
+
         [HttpPost("/products/groups/post")]
-        public Group[] GetGroups([FromBody]Guid[] id)
+        public Group[] GetGroups([FromBody] Guid[] id)
         {
             Group[] groups = _groupsService.GetGroups(id);
             return groups;
         }
 
-        [HttpGet("products/group/remove")]
+        [HttpGet("/products/group/get")]
+        public Group GetGroup([FromQuery]Guid id) 
+        {
+            Group group = _groupsService.GetGroup(id);
+            return group;
+        }
+
+        [HttpPost("/products/group/remove")]
         public Result RemoveGroup([FromQuery] Guid id)
         {
             return _groupsService.RemoveGroup(id);
+        }
+
+        [HttpPost("products/group/save")]
+        public Result SaveGroup([FromBody]GroupBlank group)
+        {
+            return _groupsService.SaveGroup(group);
         }
     }
 }

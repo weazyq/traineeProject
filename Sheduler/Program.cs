@@ -20,7 +20,7 @@ namespace Sheduler
 
             ConsoleKeyInfo key;
 
-            productService.Save(new ProductBlank
+            /*productService.Save(new ProductBlank
             {
                 Name = "Товарчик",
                 Description = "Вкусный",
@@ -28,7 +28,7 @@ namespace Sheduler
                 GroupId = 1,
                 IsSale = true,
                 Price = 1000
-            });
+            });*/
 
             Product[] products = { };
             while (AppEnable)

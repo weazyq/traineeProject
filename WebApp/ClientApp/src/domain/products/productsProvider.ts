@@ -3,31 +3,31 @@ import { HttpClient } from "../../pages/products/productList";
 import { mapToProduct, mapToProducts, Product } from "./models/product";
 import { ProductBlank } from "./models/productBlank";
 import { Page } from "../page";
+import { mapToResult, Result } from "../result";
 
 export default class ProductsProvider{
+    public static async saveProduct(productBlank: ProductBlank): Promise<Result>{
+        const {errors, isSuccess} = await HttpClient.post('/products/save', { body: productBlank })
 
-    public static async saveProduct(productBlank: ProductBlank): Promise<string | null>{
-        const result = await HttpClient.post('/products/save', { body: productBlank })
-        
-        if(result.isSucces)
-            return null
+        const result = mapToResult(errors, isSuccess)
 
-        return result.errors[0]
+        return result
     }
 
     public static async getProduct(id: string | null): Promise<Product>{
         const result = await HttpClient.get('/product/get', `id=${id}`)
         
-        return result
+        const product: Product = mapToProduct(result)
+
+        return product
     }
 
-    public static async getProducts(page: number, countInPage: number, filter: string): Promise<Page>{
+    public static async getProducts(pageNumber: number, countInPage: number, filter: string): Promise<Page<Product>>{
 
-        const query = `${page ? `pageNumber=${page}` : ``}${countInPage ? `&countInPage=${countInPage}` : ``}${filter ? `&queryString=${filter}` : ``}`
-        
-        let {totalRows, values}: Page = await HttpClient.get('/products/get', query)
-        values = mapToProducts(values)
+        const query = `pageNumber=${pageNumber}&countInPage=${countInPage}${filter && `&queryString=${filter}`}`
 
-        return { totalRows, values}
+        let {totalRows, values} = await HttpClient.get('/products/get', query)
+
+        return new Page(totalRows, mapToProducts(values))
     }
 }

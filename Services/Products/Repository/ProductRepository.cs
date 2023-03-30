@@ -64,7 +64,7 @@ namespace Services.Products.Repository
                 }
             }
         }
-        public Result SaveProduct(ProductBlank product)
+        public void SaveProduct(ProductBlank product)
         {
             using (var connection = new NpgsqlConnection(_connectionString))
             {
@@ -91,7 +91,6 @@ namespace Services.Products.Repository
                                         ON CONFLICT (id) DO UPDATE SET name = @name, category = @category, groupid = @groupid, description = @description, price = @price, modifieddatetimeutc = @time";
                     
                     cmd.ExecuteNonQuery();
-                    return Result.Success();
                 }
             }
         }

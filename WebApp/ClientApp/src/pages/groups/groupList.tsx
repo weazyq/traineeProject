@@ -11,38 +11,58 @@ interface Props {
     countInPage: number
 }
 
-export function GroupList(){
+export function GroupList(props: Props){
 
     const [filter, setFilter] = useState<string>('')
     const [groupId, setGroupId] = useState<string | null>('')
     const [show, setShow] = useState<boolean>(false)
     const [alert, setAlert] = useState<string>('')
     const [removeGroupId, setRemoveGroupId] = useState<string | null>(null)
-    const [editGroupId, setEditGroupId] = useState<string | null>(null)
 
     const [groups, setGroups] = useState<Group[]>([])
+    const [page, setPage] = useState<number>(1)
     const [pages, setPages] = useState<number>(1)
 
     const filterChange = (value: string) => {
         setFilter(value)
     }
 
+    async function loadGroups(){
+        const {totalRows, values} = await ProductGroupsProvider.getGroupsPage(page, props.countInPage, filter);
+        
+        let pages = (totalRows % props.countInPage === 0) ? 
+        totalRows / props.countInPage : 
+        Math.floor(totalRows / props.countInPage) + 1
+
+        setPages(pages)
+        setGroups(values)
+    }
+
     useEffect(() => {
-        async function loadGroups(){
-            const groups = await ProductGroupsProvider.getGroups(filter);
-            setGroups(groups)
-        }
 
         loadGroups()
-    }, [filter])
+
+    }, [filter, page])
 
     async function removeGroup(id: string) {
 
-        await HttpClient.get('/groups/remove', `id=${id}`)
+        await HttpClient.post('/products/group/remove', {
+            query: `id=${id}`
+        })
     
         setGroups(groups.filter(group => group.id !== id))
         setAlert('Группа успешно удалена')
+        setPage(1)
       }
+
+    async function closeProductEditorModal(isSave: boolean){
+        setShow(false)
+        setGroupId(null)
+
+        if(!isSave) return
+        setAlert('Группа успешно сохранена')
+        loadGroups()
+    }
 
   return (
     <section style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 30 }}>
@@ -82,7 +102,7 @@ export function GroupList(){
                         <TableRow key={index}>
                             <TableCell>{group.name}</TableCell>
                             <TableCell align="right">
-                                <IconButton onClick={() => setEditGroupId(group.id)}>
+                                <IconButton onClick={() => {setGroupId(group.id); setShow(true)}}>
                                     <Edit/>    
                                 </IconButton>
                                 <IconButton onClick={() => setRemoveGroupId(group.id)}>
@@ -95,9 +115,9 @@ export function GroupList(){
                 </TableBody>
             </Table>
         </TableContainer>
-        <Pagination count={pages} onChange={(_, value) => setPages(value)}/>
+        <Pagination count={pages} onChange={(_, value) => setPage(value)}/>
         
-        <GroupEditorModal groupId={groupId} isOpen={show}/>
+        <GroupEditorModal groupId={groupId} isOpen={show} onClose={closeProductEditorModal}/>
 
         <Dialog
             open={removeGroupId !== null}

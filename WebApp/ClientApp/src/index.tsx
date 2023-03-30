@@ -18,7 +18,7 @@ const router = createBrowserRouter([
       },
       {
         path: "groups/",
-        element: <GroupList/>
+        element: <GroupList countInPage={10}/>
       }
     ]
   },

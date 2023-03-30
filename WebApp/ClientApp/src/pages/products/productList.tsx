@@ -2,11 +2,12 @@ import React, { useEffect, useState } from "react"
 import { Alert, Button, TextField, Table, TableContainer, TableHead, TableCell, TableRow, Paper, TableBody, Pagination, IconButton, Dialog, DialogTitle, DialogActions, DialogContent, DialogContentText } from '@mui/material';
 import { Delete, Edit, Add, Close, Check } from '@mui/icons-material';
 import { ProductEditorModal } from "./productEditorModal";
-import { mapToProducts, Product } from "../../domain/products/models/product";
+import { Product } from "../../domain/products/models/product";
 import { ProductCategory } from "../../domain/products/models/productCategory";
 import { Group } from "../../domain/groups/models/group";
 import { ProductGroupsProvider } from "../../domain/products/productGroupsProvider";
 import ProductsProvider from "../../domain/products/productsProvider";
+import { distinct } from "../../common/utils";
 
 export class HttpClient {
 
@@ -77,6 +78,7 @@ export function ProductList(props: Props) {
     })
 
     setProducts(products.filter(product => product.id !== id))
+    setPage(1)
     setAlert('Продукт успешно удалён')
   }
 
@@ -84,13 +86,7 @@ export function ProductList(props: Props) {
   async function loadProducts() {
     const {totalRows, values} = await ProductsProvider.getProducts(page,props.countInPage,filter)
     
-    let groupIds: string[] = []
-    values.forEach(element => {
-      if(!groupIds.find((str) => str === element.groupid))
-      groupIds = [...groupIds, element.groupid]
-    });
-
-    console.log(groupIds)
+    const groupIds = distinct(values.map((value) => value.groupid))
 
     const groups: Group[] = await ProductGroupsProvider.getProductGroups(groupIds);
     setGroups(groups)
@@ -115,7 +111,6 @@ export function ProductList(props: Props) {
     
       setAlert('Продукт успешно сохранён')
       loadProducts()
-      
   }
 
   return (

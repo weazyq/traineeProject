@@ -1,9 +1,9 @@
-export class Page {
+export class Page<T> {
 
     totalRows: number
-    values: any[]
+    values: T[]
 
-    constructor(totalRows: number, values: any[]) {
+    constructor(totalRows: number, values: T[]) {
         this.totalRows = totalRows
         this.values = values
     }
