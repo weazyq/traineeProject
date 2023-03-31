@@ -1,14 +1,16 @@
 import React, { useEffect, useState } from "react"
-import { Alert, Button, TextField, Table, TableContainer, TableHead, TableCell, TableRow, Paper, TableBody, Pagination, IconButton, Dialog, DialogTitle, DialogActions, DialogContent, DialogContentText } from '@mui/material';
-import { Delete, Edit, Add, Close, Check } from '@mui/icons-material';
+import { Alert, Button, TextField, Table, TableContainer, TableHead, TableCell, TableRow, Paper, TableBody, Pagination, IconButton, Dialog, DialogTitle, DialogActions, DialogContent, DialogContentText, ButtonGroup, ToggleButton, ToggleButtonGroup, Card, Chip, colors, Grid, Box } from '@mui/material';
+import { Delete, Edit, Add, Close, Check, DashboardOutlined, TableViewOutlined } from '@mui/icons-material';
 import { ProductEditorModal } from "./productEditorModal";
 import { Product } from "../../domain/products/models/product";
 import { ProductCategory } from "../../domain/products/models/productCategory";
 import { Group } from "../../domain/groups/models/group";
+import { ProductCard } from "./productCard";
 import { ProductGroupsProvider } from "../../domain/products/productGroupsProvider";
 import ProductsProvider from "../../domain/products/productsProvider";
 import { distinct } from "../../common/utils";
 import { HttpClient } from "../../common/httpClient";
+import { useInView } from "react-intersection-observer";
 
 interface Props {
   products?: Product[]
@@ -27,10 +29,19 @@ export function ProductList(props: Props) {
   const [removeProductId, setRemoveProductId] = useState<string | null>(null);
   const [productId, setProductId] = useState<string | null>(null);
   const [show, setShow] = useState<boolean>(false);
+  const [showMethod, setShowMethod] = useState<string>('table');
+  const [ref, inView] = useInView()
+  const [loading, setLoading] = useState<boolean>(false)
 
   const handleFilterChange = (value: string) => {
     setPage(1)
     setFilter(value)
+  }
+
+  const handleShowMethod = (event: React.MouseEvent<HTMLElement>, newAlignment: string) => {
+    if(newAlignment !== null){
+      setShowMethod(newAlignment)
+    }
   }
 
   async function removeProduct(id: string) {
@@ -44,7 +55,7 @@ export function ProductList(props: Props) {
     setAlert('Продукт успешно удалён')
   }
 
-
+  /*Загрузка подуктов с использованием навигации*/  
   async function loadProducts() {
     const {totalRows, values} = await ProductsProvider.getProducts(page,props.countInPage,filter)
     
@@ -60,10 +71,34 @@ export function ProductList(props: Props) {
     setPages(pages)
     setProducts(values)
   }
-
-  useEffect(() => { 
-    loadProducts() 
+  
+  useEffect(() => {
+    loadProducts()
   }, [page, filter])
+  /*=========================================*/
+
+  /*Ленивая загрузка подуктов*/
+  async function lazyLoadProducts(){
+      const {totalRows, values} = await ProductsProvider.getProducts(page, props.countInPage,filter)
+
+      const groupIds = distinct(values.map((value) => value.groupid))
+
+      const groups: Group[] = await ProductGroupsProvider.getProductGroups(groupIds);
+      setGroups(groups)
+  
+      setPage(page + 1)
+      setProducts({...products, ...values})
+  }
+
+  useEffect(() => {
+    if(inView){
+      setLoading(true)
+      lazyLoadProducts()
+      setLoading(false)
+    }
+  }, [inView, loading])
+  /*====================================*/
+
 
   async function closeProductEditorModal(isSave: boolean){
     setShow(false)
@@ -76,30 +111,51 @@ export function ProductList(props: Props) {
   }
 
   return (
+    
     <section style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 30 }}>
       <h2>Продукты</h2>
 
       <div style={{ display: "flex", width: '100%', flexDirection: 'inherit', alignItems: 'center', gap: 30 }}>
-        <div style={{ textAlign: "right", width: '100%' }}>
-          <TextField
-            label="Поиск продукта"
-            size="small"
-            value={filter}
-            onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-              handleFilterChange(event.target.value)
-            }}
-          />
-          <Button 
-            variant="contained" 
-            startIcon={<Add/>} 
-            onClick={() => {setProductId(null); setShow(true)}}>
-              Создать
-          </Button>
+        <div style={{ display: "flex", justifyContent: "space-between", width: '100%' }}>
+          <div style={{display: "flex"}}>
+                <ToggleButtonGroup
+                exclusive
+                size="small"
+                value={showMethod}
+                onChange={handleShowMethod}
+                >
+                  <ToggleButton value="table">
+                    <TableViewOutlined/>
+                  </ToggleButton>
+                  <ToggleButton value="cards">
+                    <DashboardOutlined/>
+                  </ToggleButton>
+                </ToggleButtonGroup>
+                
+          </div>
+          <div style={{display: "flex"}}>
+            <TextField
+              label="Поиск продукта"
+              size="small"
+              value={filter}
+              onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+                handleFilterChange(event.target.value)
+              }}
+            />
+            <Button 
+              variant="contained" 
+              startIcon={<Add/>} 
+              onClick={() => {setProductId(null); setShow(true)}}>
+                Создать
+            </Button>
+          </div>
         </div>
         {alert && (
           <Alert onClose={() => { setAlert('') }}>{alert}</Alert>
         )}
-        <TableContainer component={Paper}>
+        {showMethod == 'table' && (
+          <>
+          <TableContainer component={Paper}>
           <Table aria-label="simple table">
             <TableHead>
               <TableRow>
@@ -136,7 +192,18 @@ export function ProductList(props: Props) {
           </Table>
         </TableContainer>
         <Pagination count={pages} onChange={(_, value) => setPage(value)}/>
+        </>
+        )}
+        {showMethod == 'cards' && (
+          <Grid container>
+            {products.map((value, index) => 
+              <ProductCard {...value} key={index}
+            />)}
+            <div ref={ref}>fwfwf</div>
+          </Grid>
+        )}
       </div>
+      
 
       <ProductEditorModal productId={productId} isOpen={show} onClose={closeProductEditorModal}  /> 
 
