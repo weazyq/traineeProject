@@ -2,9 +2,9 @@ import { Alert, Button, Dialog, DialogActions, DialogContent, DialogContentText,
 import { Group } from "../../domain/groups/models/group"
 import { useEffect, useState } from "react"
 import { Add, Delete, Edit } from "@mui/icons-material"
-import { HttpClient } from "../products/productList"
 import { GroupEditorModal } from "./groupEditorModal"
 import { ProductGroupsProvider } from "../../domain/products/productGroupsProvider"
+import { HttpClient } from "../../common/httpClient"
 
 interface Props {
     groups?: Group[]

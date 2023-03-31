@@ -1,8 +1,8 @@
-import { HttpClient } from "../../pages/products/productList";
 import { Group, mapToGroup, mapToGroups } from "../groups/models/group";
 import { GroupBlank } from "../groups/models/groupBlank";
 import { Page } from "../page";
 import { mapToResult, Result } from "../result";
+import { HttpClient } from "../../common/httpClient";
 
 export class ProductGroupsProvider{
 

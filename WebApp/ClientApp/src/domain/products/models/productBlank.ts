@@ -1,4 +1,3 @@
-import { PriceChange } from "@mui/icons-material";
 import { Product } from "./product";
 import { ProductCategory } from "./productCategory";
 

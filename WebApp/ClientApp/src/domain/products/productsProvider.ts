@@ -1,9 +1,8 @@
-import { Http } from "@mui/icons-material";
-import { HttpClient } from "../../pages/products/productList";
 import { mapToProduct, mapToProducts, Product } from "./models/product";
 import { ProductBlank } from "./models/productBlank";
 import { Page } from "../page";
 import { mapToResult, Result } from "../result";
+import { HttpClient } from "../../common/httpClient";
 
 export default class ProductsProvider{
     public static async saveProduct(productBlank: ProductBlank): Promise<Result>{
