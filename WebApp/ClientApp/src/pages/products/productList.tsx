@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react"
-import { Alert, Button, TextField, Table, TableContainer, TableHead, TableCell, TableRow, Paper, TableBody, Pagination, IconButton, Dialog, DialogTitle, DialogActions, DialogContent, DialogContentText, ButtonGroup, ToggleButton, ToggleButtonGroup, Card, Chip, colors, Grid, Box } from '@mui/material';
+import React, { useEffect, useRef, useState } from "react"
+import { Alert, Button, TextField, Table, TableContainer, TableHead, TableCell, TableRow, Paper, TableBody, Pagination, IconButton, Dialog, DialogTitle, DialogActions, DialogContent, DialogContentText, ToggleButton, ToggleButtonGroup, Grid } from '@mui/material';
 import { Delete, Edit, Add, Close, Check, DashboardOutlined, TableViewOutlined } from '@mui/icons-material';
 import { ProductEditorModal } from "./productEditorModal";
 import { Product } from "../../domain/products/models/product";
@@ -10,7 +10,6 @@ import { ProductGroupsProvider } from "../../domain/products/productGroupsProvid
 import ProductsProvider from "../../domain/products/productsProvider";
 import { distinct } from "../../common/utils";
 import { HttpClient } from "../../common/httpClient";
-import { useInView } from "react-intersection-observer";
 
 interface Props {
   products?: Product[]
@@ -30,8 +29,21 @@ export function ProductList(props: Props) {
   const [productId, setProductId] = useState<string | null>(null);
   const [show, setShow] = useState<boolean>(false);
   const [showMethod, setShowMethod] = useState<string>('table');
-  const [ref, inView] = useInView()
-  const [loading, setLoading] = useState<boolean>(false)
+  const [loading, setLoading] = useState<boolean>(true)
+  
+  const options = {
+    root: null,
+    rootMargin: "0px",
+    threshold: 1
+  }
+
+  const callbackFunction = (entries: any) => {
+    const[entry] = entries
+    setInView(entry.isIntersecting)
+  }
+
+  const containerRef = useRef(null)
+  const [inView, setInView] = useState(false)
 
   const handleFilterChange = (value: string) => {
     setPage(1)
@@ -39,6 +51,8 @@ export function ProductList(props: Props) {
   }
 
   const handleShowMethod = (event: React.MouseEvent<HTMLElement>, newAlignment: string) => {
+    setProducts([])
+    setPage(1)
     if(newAlignment !== null){
       setShowMethod(newAlignment)
     }
@@ -73,31 +87,51 @@ export function ProductList(props: Props) {
   }
   
   useEffect(() => {
-    loadProducts()
-  }, [page, filter])
+    const observer = new IntersectionObserver(callbackFunction, options)
+    if (containerRef.current){
+      observer.observe(containerRef.current)
+    }
+    return () => {
+      if (containerRef.current)
+      {
+        observer.unobserve(containerRef.current)
+      }
+    }
+  }, [containerRef, options])
+
+  useEffect(() => {
+    if(showMethod === 'table'){
+      loadProducts()
+      console.log('table load products')
+    }
+  }, [page,filter,showMethod])
+
+  useEffect(() => {
+    if(showMethod === 'cards'){
+      if (inView || loading){
+        console.log('зашёл в ленивую загрузку')
+        console.log(page)
+        lazyLoadProducts()
+        setLoading(false)
+      }
+    }  
+  }, [filter, inView, showMethod])
   /*=========================================*/
 
   /*Ленивая загрузка подуктов*/
   async function lazyLoadProducts(){
-      const {totalRows, values} = await ProductsProvider.getProducts(page, props.countInPage,filter)
-
+    if(page <= pages){
+      
+      const {values} = await ProductsProvider.getProducts(page, props.countInPage,filter)
       const groupIds = distinct(values.map((value) => value.groupid))
 
       const groups: Group[] = await ProductGroupsProvider.getProductGroups(groupIds);
       setGroups(groups)
   
+      setProducts([...products, ...values])
       setPage(page + 1)
-      setProducts({...products, ...values})
-  }
-
-  useEffect(() => {
-    if(inView){
-      setLoading(true)
-      lazyLoadProducts()
-      setLoading(false)
     }
-  }, [inView, loading])
-  /*====================================*/
+  }
 
 
   async function closeProductEditorModal(isSave: boolean){
@@ -153,7 +187,7 @@ export function ProductList(props: Props) {
         {alert && (
           <Alert onClose={() => { setAlert('') }}>{alert}</Alert>
         )}
-        {showMethod == 'table' && (
+        {showMethod === 'table' && (
           <>
           <TableContainer component={Paper}>
           <Table aria-label="simple table">
@@ -194,12 +228,12 @@ export function ProductList(props: Props) {
         <Pagination count={pages} onChange={(_, value) => setPage(value)}/>
         </>
         )}
-        {showMethod == 'cards' && (
-          <Grid container>
+        {showMethod === 'cards' && (
+          <Grid container spacing={3}>
             {products.map((value, index) => 
               <ProductCard {...value} key={index}
             />)}
-            <div ref={ref}>fwfwf</div>
+            <div ref={containerRef}></div>
           </Grid>
         )}
       </div>
